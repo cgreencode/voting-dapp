@@ -4,15 +4,37 @@ pragma solidity ^0.8.0;
 import "hardhat/console.sol";
 import "./structures/Elements.sol";
 
+/// @title Proposal Contract
+/// @author Juan Felipe Aranguren
+/// @notice Manages proposal operations with checks
+/// @dev This is a CRUD program with validations
+
 contract Proposal {
+
+    /// @notice proposals mapping. The uint is its unique ID
     mapping(uint256 => ProposalForm) public proposals;
+    /// @notice holds IDs of all created proposals
     uint256[] public proposalList;
 
-    event ProposalVoted(uint indexed proposalId, address user, uint _lastVotedAt);
-    event ProposalCreated(uint indexed proposalId, address indexed createdBy, string name, uint createdAt);
-    event ProposalReachedTarget(uint indexed proposalId, uint target);
-    event VoteWasRetrieved(uint indexed proposalId, address indexed user, uint time);
+    event ProposalVoted(
+        uint256 indexed proposalId,
+        address user,
+        uint256 _lastVotedAt
+    );
+    event ProposalCreated(
+        uint256 indexed proposalId,
+        address indexed createdBy,
+        string name,
+        uint256 createdAt
+    );
+    event ProposalReachedTarget(uint256 indexed proposalId, uint256 target);
+    event VoteWasRetrieved(
+        uint256 indexed proposalId,
+        address indexed user,
+        uint256 time
+    );
 
+    /// @notice checks for duplicated proposals
     modifier proposalIsDuplicated(uint256 _id) {
         string
             memory duplicatedProposalMessage = "Proposal with same ID already exists!";
@@ -26,12 +48,15 @@ contract Proposal {
         _;
     }
 
+    /// @notice checks for inactive or non-existing proposals
     modifier proposalIsActive(uint256 _id) {
         bool propIsActive = proposals[_id].isActive;
         require(propIsActive, "Proposal is inactive or doesn't exist");
         _;
     }
 
+    /// @notice checks for completed proposals
+    /// @dev voteCount == goal (set ammount of votes)
     function _proposalHasReachedGoal(uint256 _id) private returns (bool) {
         uint256 votes = proposals[_id].voteCount;
         uint256 goal = proposals[_id].goal;
@@ -46,6 +71,7 @@ contract Proposal {
         return false;
     }
 
+    /// @notice a proposal is created. ID must be unique
     function newProposal(
         uint256 _id,
         string memory _name,
@@ -100,9 +126,14 @@ contract Proposal {
         emit ProposalVoted(_id, msg.sender, _lastVotedAt);
     }
 
-    function liquidVote(uint _id, uint time) public proposalIsActive(_id) {
+    /// @notice handles the vote retrieval as a small "Direct Democracy" mechanism
+    /// @dev notice a that a vote is substracted and also the lastVotedAt timestamp is updated
+    function liquidVote(uint256 _id, uint256 time)
+        public
+        proposalIsActive(_id)
+    {
         ProposalForm storage prop = proposals[_id];
-        uint vote = 1;
+        uint256 vote = 1;
 
         prop.voteCount -= vote;
         prop.lastVotedAt = time;
